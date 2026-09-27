@@ -9,7 +9,7 @@ Node.js/TypeScript backend for Indian EV charger aggregation, live availability,
 - Google Routes API trip routing
 - Battery-aware charging-stop selection
 - OCPI 2.2.1 live-data adapters for Pulse Energy and IONAGE
-- Idempotent FASTag payment intents with a safe PoC mock gateway
+- NETC EV FASTag identification + post-session settlement with a safe PoC mock gateway
 - Swagger/OpenAPI at `/docs`
 - Structured logs, security headers, rate limiting and health probes
 - Docker, Render Blueprint and GitHub Actions CI
@@ -66,7 +66,7 @@ curl -X POST http://localhost:3000/v1/trips/plan \
 2. Create a Render Blueprint from this repository using `render.yaml`.
 3. Add `DATABASE_URL`, `GOOGLE_MAPS_API_KEY` and `CORS_ORIGINS` in Render.
 4. Leave provider integrations disabled until sandbox credentials are issued.
-5. Keep `FASTAG_MODE=mock` until NETC/acquirer certification is complete.
+5. Keep `FASTAG_MODE=mock` until NETC/acquirer certification is complete. The app can bypass CPO wallets only where the charger owner also grants an OCPI/OCPP/private control integration.
 
 Render free services sleep when idle, so this deployment is intended for a PoC rather than an uptime-sensitive launch.
 

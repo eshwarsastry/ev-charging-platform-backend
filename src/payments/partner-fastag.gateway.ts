@@ -1,20 +1,37 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import type { FastagAuthorizationResult, FastagGateway } from './fastag-gateway';
+import type {
+  FastagDebitResult,
+  FastagGateway,
+  FastagTagDetailsResult,
+} from './fastag-gateway';
 
 /**
- * Deliberately blocked until the selected acquiring bank / certified NETC system integrator
- * supplies its contract, endpoint specification, certificate exchange and sandbox approval.
- * Inventing an unofficial NETC endpoint would be unsafe for a payment system.
+ * The public IHMCL procedural guidelines define the NETC EV flow, but the
+ * acquiring-bank API/ICD contract, certificates, merchant/plaza identifiers and
+ * sandbox endpoints are partner-controlled. We deliberately do not invent
+ * request paths or payloads here.
+ *
+ * Replace this adapter only after an acquiring bank / approved NETC system
+ * integrator supplies its signed technical specification and certification
+ * test pack.
  */
 @Injectable()
 export class PartnerFastagGateway implements FastagGateway {
   public readonly name = 'netc-fastag-partner';
 
-  public authorize(): Promise<FastagAuthorizationResult> {
-    throw new ServiceUnavailableException({
+  public getTagDetails(): Promise<FastagTagDetailsResult> {
+    throw this.onboardingRequired();
+  }
+
+  public debit(): Promise<FastagDebitResult> {
+    throw this.onboardingRequired();
+  }
+
+  private onboardingRequired(): ServiceUnavailableException {
+    return new ServiceUnavailableException({
       code: 'FASTAG_PARTNER_ONBOARDING_REQUIRED',
       message:
-        'Partner-mode FASTag authorization requires an acquiring-bank or certified NETC SI contract and sandbox specification',
+        'NETC EV partner mode requires acquiring-bank onboarding, private ICD/API specs, certificates and sandbox approval',
     });
   }
 }

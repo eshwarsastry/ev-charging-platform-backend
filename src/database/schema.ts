@@ -33,6 +33,15 @@ export const paymentStatus = pgEnum('payment_status', [
   'REFUNDED',
 ]);
 
+export const fastagSessionStatus = pgEnum('fastag_session_status', [
+  'TAG_VERIFIED',
+  'REJECTED',
+  'SETTLING',
+  'PAID',
+  'FAILED',
+  'CANCELLED',
+]);
+
 export const providers = pgTable('providers', {
   id: text('id').primaryKey(),
   displayName: text('display_name').notNull(),
@@ -101,6 +110,32 @@ export const connectors = pgTable(
     lastUpdated: timestamp('last_updated', { withTimezone: true }),
   },
   (table) => [uniqueIndex('connectors_evse_external_uidx').on(table.evseId, table.externalId)],
+);
+
+export const fastagSessions = pgTable(
+  'fastag_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    lookupKey: text('lookup_key').notNull(),
+    userId: uuid('user_id').notNull(),
+    stationReference: text('station_reference').notNull(),
+    tagFingerprint: text('tag_fingerprint').notNull(),
+    vehicleRegistration: text('vehicle_registration'),
+    vehicleClass: text('vehicle_class'),
+    issuerBankId: text('issuer_bank_id'),
+    exceptionCode: text('exception_code'),
+    tagStatus: text('tag_status').notNull(),
+    status: fastagSessionStatus('status').notNull(),
+    paymentIntentId: uuid('payment_intent_id'),
+    energyWh: bigint('energy_wh', { mode: 'number' }),
+    amountPaise: bigint('amount_paise', { mode: 'number' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('fastag_sessions_lookup_key_uidx').on(table.lookupKey),
+    index('fastag_sessions_station_reference_idx').on(table.stationReference),
+  ],
 );
 
 export const paymentIntents = pgTable(
