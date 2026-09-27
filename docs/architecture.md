@@ -9,7 +9,8 @@ OHMCharge starts as a modular monolith. It keeps transactional consistency and d
 3. `TripPlannerService` applies the vehicle battery model and chooses reachable live chargers.
 4. Google Routes recalculates the final route with the selected chargers as intermediate waypoints.
 5. Provider data is synchronized through credential-gated OCPI 2.2.1 adapters.
-6. Payment orchestration uses a gateway boundary. The PoC runs with a deterministic mock; a NETC partner adapter is activated only after formal onboarding.
+6. NETC EV payment orchestration first verifies the physical FASTag through an acquirer/Mapper gateway, then debits the final post-session amount after metering. The PoC runs with a deterministic mock; a real acquirer adapter is activated only after formal onboarding.
+7. Charger control and payment are separate planes: OCPI/OCPP/private CPO integration controls the EVSE; FASTag replaces the vendor wallet rather than bypassing charger ownership.
 
 ## Trust boundaries
 
@@ -17,7 +18,7 @@ OHMCharge starts as a modular monolith. It keeps transactional consistency and d
 - Provider payloads are retained in `stations.raw` for traceability, but API clients receive normalized fields.
 - Admin sync endpoints require a separate high-entropy API key.
 - Payment creation requires an idempotency key and persists intent state before contacting a gateway.
-- No raw FASTag identifier, PIN, bank credential or Google key is stored in source control.
+- Raw FASTag Tag IDs/TIDs are not persisted by the current flow; only a SHA-256 fingerprint is stored for continuity checks. No PIN, bank credential or Google key is stored in source control.
 
 ## Scaling path
 
