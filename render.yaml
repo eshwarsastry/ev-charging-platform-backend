@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: ohmcharge-api
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: FASTAG_MODE
+        value: mock
+      - key: FASTAG_WEBHOOK_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PULSE_ENERGY_ENABLED
+        value: 'false'
+      - key: PULSE_ENERGY_OCPI_BASE_URL
+        sync: false
+      - key: PULSE_ENERGY_OCPI_TOKEN
+        sync: false
+      - key: IONAGE_ENABLED
+        value: 'false'
+      - key: IONAGE_OCPI_BASE_URL
+        sync: false
+      - key: IONAGE_OCPI_TOKEN
+        sync: false
