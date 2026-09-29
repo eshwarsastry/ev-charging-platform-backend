@@ -1,7 +1,7 @@
-FROM node:26-alpine AS dependencies
-RUN corepack enable
+FROM node:24-alpine AS dependencies
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
+RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
 RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS build
@@ -9,7 +9,7 @@ COPY . .
 RUN pnpm build
 RUN pnpm prune --prod
 
-FROM node:26-alpine AS runtime
+FROM node:24-alpine AS runtime
 ENV NODE_ENV=production
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
 WORKDIR /app

@@ -4,8 +4,8 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    healthCheckPath: /health/live
-    autoDeploy: true
+    healthCheckPath: /health/ready
+    autoDeployTrigger: checksPass
     envVars:
       - key: NODE_ENV
         value: production

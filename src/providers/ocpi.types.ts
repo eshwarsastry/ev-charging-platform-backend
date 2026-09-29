@@ -26,6 +26,7 @@ export interface OcpiEvse {
 }
 
 export interface OcpiLocation {
+  publish?: boolean;
   id: string;
   name?: string;
   address?: string;
@@ -40,7 +41,7 @@ export interface OcpiLocation {
 }
 
 export interface ProviderConfiguration {
-  id: 'pulse-energy' | 'ionage';
+  id: string;
   displayName: string;
   enabled: boolean;
   baseUrl?: string;

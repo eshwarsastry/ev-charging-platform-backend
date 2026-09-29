@@ -11,19 +11,31 @@ export class OcpiClient {
 
     const locations: OcpiLocation[] = [];
     const limit = 100;
-    let offset = 0;
+    let url = new URL(`${this.provider.baseUrl.replace(/\/$/, '')}/locations`);
+    url.searchParams.set('offset', '0');
+    url.searchParams.set('limit', String(limit));
+    const origin = url.origin;
+    const visited = new Set<string>();
 
     while (true) {
-      const url = new URL(`${this.provider.baseUrl.replace(/\/$/, '')}/locations`);
-      url.searchParams.set('offset', String(offset));
-      url.searchParams.set('limit', String(limit));
+      if (
+        url.origin !== origin ||
+        url.username ||
+        url.password ||
+        visited.has(url.href) ||
+        visited.size >= 1000
+      ) {
+        throw new BadGatewayException('Unsafe or repeated OCPI pagination link');
+      }
+      visited.add(url.href);
 
       const response = await fetch(url, {
         headers: {
-          authorization: `Token ${this.provider.token}`,
+          authorization: `Token ${Buffer.from(this.provider.token).toString('base64')}`,
           accept: 'application/json',
         },
         signal: AbortSignal.timeout(20_000),
+        redirect: 'error',
       });
 
       if (!response.ok) {
@@ -31,23 +43,28 @@ export class OcpiClient {
           code: 'OCPI_PROVIDER_ERROR',
           provider: this.provider.id,
           status: response.status,
-          message: (await response.text()).slice(0, 1_000),
+          message: 'OCPI provider request failed',
         });
       }
 
       const payload = (await response.json()) as OcpiResponse<OcpiLocation[]>;
-      if (payload.status_code < 1000 || payload.status_code >= 2000) {
+      if (payload.status_code !== 1000 || !Array.isArray(payload.data)) {
         throw new BadGatewayException({
           code: 'OCPI_PROTOCOL_ERROR',
           provider: this.provider.id,
           ocpiStatusCode: payload.status_code,
-          message: payload.status_message,
+          message: 'Invalid OCPI response',
         });
       }
 
       locations.push(...payload.data);
-      if (payload.data.length < limit) break;
-      offset += limit;
+      const next = response.headers
+        .get('link')
+        ?.split(',')
+        .map((link) => link.match(/<([^>]+)>;\s*rel="?next"?/i)?.[1])
+        .find(Boolean);
+      if (!next) break;
+      url = new URL(next, url);
     }
 
     return locations;

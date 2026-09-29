@@ -13,6 +13,8 @@ Node.js/TypeScript backend for Indian EV charger aggregation, live availability,
 - Swagger/OpenAPI at `/docs`
 - Structured logs, security headers, rate limiting and health probes
 - Docker, Render Blueprint and GitHub Actions CI
+- Android/iOS Expo app in [`mobile`](mobile/README.md), with a web preview
+- Configurable additional OCPI operators and an opt-in public FASTag demonstration
 
 Partner credentials are not included. Pulse Energy, IONAGE and production NETC/FASTag access require their respective commercial and sandbox onboarding.
 
@@ -28,7 +30,7 @@ pnpm db:migrate
 pnpm start:dev
 ```
 
-Set a Google Routes API key and replace the example secrets before starting. The API is available at `http://localhost:3000`; Swagger is at `http://localhost:3000/docs`.
+Replace the example secrets before starting. A Google Routes key is only needed for trip planning; discovery and the payment sandbox can run without it. The API is available at `http://localhost:3000`; Swagger is at `http://localhost:3000/docs`.
 
 ## Verification
 
@@ -75,6 +77,8 @@ Render free services sleep when idle, so this deployment is intended for a PoC r
 - [Architecture](docs/architecture.md)
 - [Google Maps and live CPO integrations](docs/integrations.md)
 - [FASTag/NETC onboarding](docs/fastag-onboarding.md)
+- [CI repair, provider configuration and launch requirements](docs/delivery-notes.md)
+- [Android/iOS application](mobile/README.md)
 
 ## License
 

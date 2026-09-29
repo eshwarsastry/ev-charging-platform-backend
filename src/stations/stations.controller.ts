@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param, ParseUUIDPipe, NotFoundException } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
@@ -17,6 +17,14 @@ type NearbyQuery = z.infer<typeof nearbyQuerySchema>;
 @Controller('v1/stations')
 export class StationsController {
   public constructor(private readonly stations: StationsRepository) {}
+
+  @Get(':id/detail')
+  @ApiOperation({ summary: 'Get a public charging station and its connectors' })
+  public async detail(@Param('id', new ParseUUIDPipe()) id: string) {
+    const data = await this.stations.findById(id);
+    if (!data) throw new NotFoundException('Station not found');
+    return { data };
+  }
 
   @Get('nearby')
   @ApiOperation({ summary: 'Find charging stations near a coordinate' })
