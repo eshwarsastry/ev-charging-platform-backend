@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Environment } from '../config/env';
 import type {
@@ -37,6 +37,7 @@ export class GoogleRoutesClient implements RoutesClient {
   }
 
   public async computeRoute(request: RouteRequest): Promise<RouteResult> {
+    if (!this.apiKey) throw new ServiceUnavailableException('Google Routes is not configured');
     const response = await fetch(`${this.baseUrl}/directions/v2:computeRoutes`, {
       method: 'POST',
       headers: {
@@ -82,6 +83,7 @@ export class GoogleRoutesClient implements RoutesClient {
     origins: Coordinate[],
     destinations: Coordinate[],
   ): Promise<RouteMatrixElement[]> {
+    if (!this.apiKey) throw new ServiceUnavailableException('Google Routes is not configured');
     const response = await fetch(`${this.baseUrl}/distanceMatrix/v2:computeRouteMatrix`, {
       method: 'POST',
       headers: {

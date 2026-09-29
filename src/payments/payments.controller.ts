@@ -1,4 +1,15 @@
-import { BadRequestException, Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Post,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { AdminApiKeyGuard } from '../common/admin-api-key.guard';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
@@ -28,12 +39,16 @@ function requireIdempotencyKey(value: string): string {
 
 @ApiTags('payments')
 @Controller('v1/payments')
+@UseGuards(AdminApiKeyGuard)
+@ApiHeader({ name: 'x-admin-api-key', required: true })
 export class PaymentsController {
   public constructor(private readonly payments: PaymentsService) {}
 
   @Post('fastag/sessions/identify')
   @ApiHeader({ name: 'idempotency-key', required: true })
-  @ApiOperation({ summary: 'Read FASTag through the acquirer/NETC Mapper before starting EV charging' })
+  @ApiOperation({
+    summary: 'Read FASTag through the acquirer/NETC Mapper before starting EV charging',
+  })
   public identify(
     @Headers('idempotency-key') idempotencyKey: string,
     @Body(new ZodValidationPipe(identifySchema)) body: z.infer<typeof identifySchema>,
@@ -45,7 +60,7 @@ export class PaymentsController {
   @ApiHeader({ name: 'idempotency-key', required: true })
   @ApiOperation({ summary: 'Debit the final EV charging amount through NETC FASTag' })
   public settle(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Headers('idempotency-key') idempotencyKey: string,
     @Body(new ZodValidationPipe(settleSchema)) body: z.infer<typeof settleSchema>,
   ) {
@@ -58,13 +73,13 @@ export class PaymentsController {
 
   @Get('fastag/sessions/:id')
   @ApiOperation({ summary: 'Get NETC EV FASTag session state' })
-  public getSession(@Param('id') id: string) {
+  public getSession(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.payments.getSession(id);
   }
 
   @Get('intents/:id')
   @ApiOperation({ summary: 'Get the current payment intent state' })
-  public get(@Param('id') id: string) {
+  public get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.payments.getById(id);
   }
 }

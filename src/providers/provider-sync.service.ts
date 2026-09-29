@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { providerSyncRuns } from '../database/schema';
+import { providers, providerSyncRuns } from '../database/schema';
 import { StationsRepository } from '../stations/stations.repository';
 import type { NormalizedConnectorStatus, NormalizedStation } from '../stations/stations.types';
 import { OcpiClient } from './ocpi.client';
@@ -39,6 +39,18 @@ export class ProviderSyncService {
         message: `${provider.displayName} credentials have not been configured`,
       });
     }
+
+    await this.database.db
+      .insert(providers)
+      .values({
+        id: provider.id,
+        displayName: provider.displayName,
+        enabled: true,
+      })
+      .onConflictDoUpdate({
+        target: providers.id,
+        set: { displayName: provider.displayName, enabled: true, updatedAt: new Date() },
+      });
 
     const [run] = await this.database.db
       .insert(providerSyncRuns)
@@ -84,7 +96,7 @@ export class ProviderSyncService {
       countryCode: location.country ?? 'IND',
       latitude: Number.parseFloat(location.coordinates.latitude),
       longitude: Number.parseFloat(location.coordinates.longitude),
-      isPublic: true,
+      isPublic: location.publish !== false,
       raw: location,
       evses: (location.evses ?? []).map((evse) => ({
         externalUid: evse.uid,

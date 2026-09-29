@@ -12,7 +12,7 @@ import type { Environment } from './config/env';
 async function bootstrap(): Promise<void> {
   const adapter = new FastifyAdapter({
     trustProxy: ['loopback', 'linklocal', 'uniquelocal'],
-    logger: { level: process.env.LOG_LEVEL ?? 'info', redact: ['req.headers.authorization'] },
+    logger: { level: process.env.LOG_LEVEL ?? 'info', redact: ['req.headers.authorization', 'req.headers["x-admin-api-key"]'] },
   });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     bufferLogs: true,

@@ -22,6 +22,22 @@ interface StationRow {
 export class StationsRepository {
   public constructor(private readonly database: DatabaseService) {}
 
+  public async findById(id: string): Promise<Record<string, unknown> | undefined> {
+    const result = await this.database.db.execute(sql`
+      SELECT s.id, s.provider_id, s.name, s.address, s.city, s.state, s.updated_at,
+        ST_Y(s.location) AS latitude, ST_X(s.location) AS longitude,
+        COALESCE(jsonb_agg(jsonb_build_object(
+          'id', c.id, 'standard', c.standard, 'status', e.status,
+          'power_kw', COALESCE(c.max_electric_power_watts, 0)::float / 1000,
+          'last_updated', e.last_updated
+        )) FILTER (WHERE c.id IS NOT NULL), '[]'::jsonb) AS connectors
+      FROM stations s LEFT JOIN evses e ON e.station_id = s.id
+      LEFT JOIN connectors c ON c.evse_id = e.id
+      WHERE s.id = ${id} AND s.is_public = true GROUP BY s.id
+    `);
+    return result.rows[0];
+  }
+
   public async findAlongRoute(input: {
     polyline: GeoJSON.LineString;
     corridorMeters: number;
@@ -87,6 +103,8 @@ export class StationsRepository {
         s.address,
         s.city,
         s.state,
+        s.updated_at,
+        ARRAY_AGG(DISTINCT c.standard) FILTER (WHERE c.standard IS NOT NULL) AS connector_standards,
         ST_Y(s.location) AS latitude,
         ST_X(s.location) AS longitude,
         ST_Distance(
@@ -98,7 +116,7 @@ export class StationsRepository {
       FROM stations s
       LEFT JOIN evses e ON e.station_id = s.id
       LEFT JOIN connectors c ON c.evse_id = e.id
-      WHERE ST_DWithin(
+      WHERE s.is_public = true AND ST_DWithin(
         s.location::geography,
         ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326)::geography,
         ${input.radiusMeters}
@@ -144,6 +162,8 @@ export class StationsRepository {
               city: location.city,
               state: location.state,
               postalCode: location.postalCode,
+              isPublic: location.isPublic,
+              countryCode: location.countryCode,
               location: { x: location.longitude, y: location.latitude },
               raw: location.raw,
               updatedAt: new Date(),

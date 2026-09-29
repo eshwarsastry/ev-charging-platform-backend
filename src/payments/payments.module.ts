@@ -6,10 +6,13 @@ import { MockFastagGateway } from './mock-fastag.gateway';
 import { PartnerFastagGateway } from './partner-fastag.gateway';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { SandboxController } from './sandbox.controller';
+import { AdminApiKeyGuard } from '../common/admin-api-key.guard';
 
 @Module({
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, SandboxController],
   providers: [
+    AdminApiKeyGuard,
     MockFastagGateway,
     PartnerFastagGateway,
     {

@@ -9,6 +9,7 @@ export class ProviderConfigService {
 
   public all(): ProviderConfiguration[] {
     return [
+      ...this.config.get('OCPI_PROVIDERS_JSON', { infer: true }),
       {
         id: 'pulse-energy',
         displayName: 'Pulse Energy',

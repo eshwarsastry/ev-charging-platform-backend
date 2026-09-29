@@ -35,7 +35,9 @@ describe('OcpiClient', () => {
 
     expect(locations).toHaveLength(1);
     const requestInit = fetchMock.mock.calls[0]?.[1];
-    expect(requestInit?.headers).toMatchObject({ authorization: 'Token secret-token' });
+    expect(requestInit?.headers).toMatchObject({
+      authorization: `Token ${Buffer.from('secret-token').toString('base64')}`,
+    });
   });
 
   it('does not make a request when a provider is disabled', async () => {

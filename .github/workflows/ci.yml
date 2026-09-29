@@ -4,6 +4,11 @@ on:
   pull_request:
   push:
     branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,8 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10.17.1
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -28,3 +31,61 @@ jobs:
       - run: pnpm audit --prod
       - run: pnpm build
       - run: docker build -t ohmcharge-api:${{ github.sha }} .
+      - name: Start PostGIS
+        run: |
+          docker network create ohmcharge-ci
+          docker run -d --name ohmcharge-db --network ohmcharge-ci \
+            -e POSTGRES_USER=ohmcharge -e POSTGRES_PASSWORD=ci-only-password \
+            -e POSTGRES_DB=ohmcharge postgis/postgis:16-3.4
+          for attempt in $(seq 1 30); do
+            if docker exec ohmcharge-db pg_isready -U ohmcharge -d ohmcharge; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Start production image and run migrations
+        run: |
+          docker run -d --name ohmcharge-api --network ohmcharge-ci -p 3000:3000 \
+            -e DATABASE_URL=postgresql://ohmcharge:ci-only-password@ohmcharge-db:5432/ohmcharge \
+            -e ADMIN_API_KEY=ci-only-admin-key-at-least-32-characters \
+            -e GOOGLE_MAPS_API_KEY=ci-placeholder \
+            -e FASTAG_WEBHOOK_SECRET=ci-only-webhook-key-at-least-32-characters \
+            -e ENABLE_PAYMENT_SANDBOX=true \
+            ohmcharge-api:${{ github.sha }}
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:3000/health/ready; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: API smoke checks
+        run: node scripts/smoke.mjs
+      - name: Container logs
+        if: failure()
+        run: |
+          docker logs ohmcharge-api || true
+          docker logs ohmcharge-db || true
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker rm -f ohmcharge-api ohmcharge-db || true
+          docker network rm ohmcharge-ci || true
+
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: node scripts/dependency-check.cjs
+      - run: npm audit
+      - run: npx expo install --check
+      - run: npm run export
