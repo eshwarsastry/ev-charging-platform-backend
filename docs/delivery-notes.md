@@ -6,6 +6,8 @@ The [failed main CI run](https://github.com/eshwarsastry/ev-charging-platform-ba
 
 The Dockerfile now uses Node 24 consistently with CI and installs the exact pnpm version declared in `packageManager`, without relying on bundled Corepack. Dependabot's Docker updates stay within the Node major until CI and runtime can be updated together. CI additionally starts the production image against PostGIS, exercises migrations/readiness, and checks discovery, validation, payment authorization and sandbox responses.
 
+The startup smoke test also exposed a missing runtime dependency: Swagger's Fastify adapter requires `@fastify/static`. It is now a production dependency matching the adapter's peer range, and smoke checks verify the Swagger page and CSS. Nest's testing package is aligned with the backend's Nest 11 major.
+
 The Render blueprint uses `/health/ready` and `autoDeployTrigger: checksPass`, per the [Render blueprint specification](https://render.com/docs/blueprint-spec). Apply/sync that blueprint to the Render service to adopt the deployment gate. No Render deployment or production database migration was performed during development.
 
 ## Connect more operators

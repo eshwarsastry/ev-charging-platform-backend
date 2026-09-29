@@ -7,6 +7,8 @@ async function json(path, init) {
   return response.json();
 }
 assert.equal((await json('/health/ready')).status, 'ready');
+assert.ok((await fetch(`${base}/docs`)).ok, 'Swagger UI must be served');
+assert.ok((await fetch(`${base}/docs/swagger-ui.css`)).ok, 'Swagger static assets must be served');
 assert.ok(Array.isArray((await json('/v1/providers')).data));
 assert.ok(Array.isArray((await json('/v1/stations/nearby?latitude=12.97&longitude=77.59')).data));
 assert.equal((await fetch(`${base}/v1/stations/nearby?latitude=999&longitude=77`)).status, 400);
